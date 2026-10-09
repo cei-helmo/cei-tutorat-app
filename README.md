@@ -21,8 +21,8 @@ Application web construite avec Streamlit pour automatiser et faciliter le match
 ### 1. Cloner le dépôt
 
 ```bash
-git clone [https://github.com/votre-compte/votre-repo-tutorat.git](https://github.com/votre-compte/votre-repo-tutorat.git)
-cd votre-repo-tutorat
+git clone [https://github.com/cei-helmo/cei-tutorat-app.git](https://github.com/cei-helmo/cei-tutorat-app.git)
+cd cei-tutorat-app
 ```
 
 ### 2. Créer un environnement virtuel
