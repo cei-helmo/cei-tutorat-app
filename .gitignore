@@ -1,0 +1,14 @@
+config.json
+
+.idea/
+
+venv/
+.venv/
+env/
+
+__pycache__/
+*.pyc
+.streamlit/
+
+*.xlsx
+*.csv
