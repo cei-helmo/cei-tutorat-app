@@ -73,8 +73,7 @@ Modifiez ensuite `config.json` selon vos besoins :
 ### 5. Lancer l'application
 
 ```bash
-streamlit run app.py
-
+py -m streamlit run app.py
 ```
 
 L'application s'ouvrira automatiquement dans votre navigateur à l'adresse : `http://localhost:8501`.
