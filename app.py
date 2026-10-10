@@ -20,6 +20,7 @@ DEFAULT_CONFIG = {
     }
 }
 
+
 def load_config():
     """Charge le fichier JSON de configuration s'il existe, sinon utilise les valeurs par défaut."""
     if os.path.exists(CONFIG_FILE):
@@ -29,6 +30,7 @@ def load_config():
         except Exception as e:
             st.warning(f"Impossible de lire {CONFIG_FILE}, utilisation de la configuration par défaut. Erreur : {e}")
     return DEFAULT_CONFIG
+
 
 CONFIG = load_config()
 
@@ -138,15 +140,15 @@ def build_mailto_link(
         f"  Canal souhaité : {m_tuteur}\n"
         f"  Identifiant / Contact : {i_tuteur}\n\n"
         f"MODALITES DE CONTACT\n\n"
-        f"Nous invitons {nom_tuteur} à initier le premier échange avec {nom_tutore} afin de définir ensemble la fréquence et les modalités de vos séances de travail (sur le campus, via Discord ou par téléphone).\n\n"
+        f"{nom_tuteur} nous t'invitons à initier le premier échange avec {nom_tutore} afin de définir ensemble ces besoins (sur le campus, via Discord ou par téléphone).\n\n"
         f"CADRE ET ENGAGEMENTS DU TUTORAT\n\n"
         f"1. Engagement mutuel : Le tuteur réalise cet accompagnement de manière bénévole en parallèle de sa propre formation. Veillez à respecter les horaires et engagements convenus.\n"
         f"2. Préparation des séances : Pour garantir un suivi efficace, le tutoré est invité à préparer ses questions et points de blocage en amont de chaque rencontre.\n"
         f"3. Suivi du binôme : Pour toute question ou ajustement nécessaire en cours d'année, merci de contacter votre responsable tutorat ({resp_email}).\n\n"
-        f"Nous vous souhaitons une excellente collaboration ainsi qu'une très belle réussite académique.\n\n"
-        f"Excellente Journée,\n\n"
+
+        f"Excellente Journée à vous,\n\n"
         f"Le {org_name}\n"
-        f"Responsable Tutorat : {resp_email}"
+        f"Votre Responsable Tutorat : {resp_email}"
     )
 
     params = urllib.parse.urlencode({"subject": subject, "body": body}, quote_via=urllib.parse.quote)
@@ -205,20 +207,27 @@ if uploaded_file is not None:
     df_tutores = df[mask_tutore].copy()
     df_tuteurs = df[mask_tuteur].copy()
 
+    # Algorithme de matching équitable (Load Balancing)
     if not st.session_state.assignments:
         tuteur_load = {row[col_email]: 0 for _, row in df_tuteurs.iterrows()}
         for _, tutore in df_tutores.iterrows():
             tut_id = tutore[col_id]
             tut_sec = tutore[col_section]
 
-            tuteurs_compatibles = df_tuteurs[df_tuteurs[col_section] == tut_sec]
+            tuteurs_compatibles = df_tuteurs[df_tuteurs[col_section] == tut_sec].copy()
             assigned = None
-            for _, tut_row in tuteurs_compatibles.iterrows():
-                t_mail = tut_row[col_email]
-                if tuteur_load[t_mail] < max_capacity:
-                    assigned = t_mail
-                    tuteur_load[t_mail] += 1
-                    break
+
+            if not tuteurs_compatibles.empty:
+                tuteurs_compatibles['current_load'] = tuteurs_compatibles[col_email].map(tuteur_load)
+                tuteurs_compatibles = tuteurs_compatibles.sort_values(by='current_load', ascending=True)
+
+                for _, tut_row in tuteurs_compatibles.iterrows():
+                    t_mail = tut_row[col_email]
+                    if tuteur_load[t_mail] < max_capacity:
+                        assigned = t_mail
+                        tuteur_load[t_mail] += 1
+                        break
+
             st.session_state.assignments[tut_id] = assigned if assigned else "Aucun"
 
     if st.sidebar.button("🔄 Réinitialiser le matching auto"):
@@ -298,7 +307,8 @@ if uploaded_file is not None:
 
                 with c2:
                     options_keys = list(tuteur_options_dict.keys())
-                    default_index = options_keys.index(current_tuteur_mail) if current_tuteur_mail in options_keys else 0
+                    default_index = options_keys.index(
+                        current_tuteur_mail) if current_tuteur_mail in options_keys else 0
 
                     new_tuteur = st.selectbox(
                         f"Tuteur pour {tut_nom}",
@@ -379,11 +389,14 @@ if uploaded_file is not None:
 
             with col_t2:
                 if count >= max_capacity:
-                    st.markdown(f"<span class='status-warning'>🟡 Complet ({count}/{max_capacity})</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='status-warning'>🟡 Complet ({count}/{max_capacity})</span>",
+                                unsafe_allow_html=True)
                 elif count > 0:
-                    st.markdown(f"<span class='status-ok'>🟢 Actif ({count}/{max_capacity})</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='status-ok'>🟢 Actif ({count}/{max_capacity})</span>",
+                                unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<span class='status-alert'>⚪ Disponible (0/{max_capacity})</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='status-alert'>⚪ Disponible (0/{max_capacity})</span>",
+                                unsafe_allow_html=True)
 
             with col_t3:
                 if assigned_students:
