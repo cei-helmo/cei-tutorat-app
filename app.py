@@ -146,6 +146,8 @@ def build_mailto_link(
         f"2. Préparation des séances : Pour garantir un suivi efficace, le tutoré est invité à préparer ses questions et points de blocage en amont de chaque rencontre.\n"
         f"3. Suivi du binôme : Pour toute question ou ajustement nécessaire en cours d'année, merci de contacter votre responsable tutorat ({resp_email}).\n\n"
 
+        f"Autant pour le tuteur que le tutoré, nous vous invitons également à rejoindre le serveur officiel de l'HELMo Info afin de faciliter au maximum la communication générale, si vous n'avez pas de compte discord vous pouvez vous en créer un, ce serveur est autant utile pour le programme tutorat que pour recevoir des informations générales sur l'HELMo et ses divers activités."
+
         f"Excellente Journée à vous,\n\n"
         f"Le {org_name}\n"
         f"Votre Responsable Tutorat : {resp_email}"
