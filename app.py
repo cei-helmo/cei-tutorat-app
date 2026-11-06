@@ -106,10 +106,9 @@ def build_mailto_link(
         info_tutore,
         autre_tutore,
         moyen_tuteur,
-        info_tuteur,
-        custom_line: str = ""
+        info_tuteur
 ) -> str | None:
-    """Génère une URL mailto et structurée pour le client e-mail avec ligne personnalisée et Discord."""
+    """Génère une URL mailto et structurée pour le client e-mail."""
     if not mail_tuteur or mail_tuteur == "Aucun":
         return None
 
@@ -127,13 +126,9 @@ def build_mailto_link(
     m_tuteur = clean_val(moyen_tuteur, "Non spécifié")
     i_tuteur = clean_val(info_tuteur, "Non renseigné")
 
-    # Intégration de la ligne personnalisée si renseignée (Point 1)
-    custom_section = f"Note importante :\n{custom_line.strip()}\n\n" if custom_line and custom_line.strip() else ""
-
     body = (
         f"Bonjour {nom_tutore} et {nom_tuteur},\n\n"
         f"Au nom du {org_name}, nous avons le plaisir de vous confirmer votre mise en relation dans le cadre du programme de tutorat pour l'année académique {academic_year}.\n\n"
-        f"{custom_section}"
         f"FICHES DE CONTACT ET PREFERENCES\n\n"
         f"• Tutoré(e) (B1) : {nom_tutore} ({section})\n"
         f"  Courriel : {mail_tutore}\n"
@@ -146,14 +141,13 @@ def build_mailto_link(
         f"  Identifiant / Contact : {i_tuteur}\n\n"
         f"MODALITES DE CONTACT\n\n"
         f"{nom_tuteur} nous t'invitons à initier le premier échange avec {nom_tutore} afin de définir ensemble ces besoins (sur le campus, via Discord ou par téléphone).\n\n"
-        f"Autant pour le tuteur que le tutoré, nous vous invitons également à rejoindre le serveur officiel de l'HELMo Info afin de faciliter au maximum la communication générale, si vous n'avez pas de compte discord vous pouvez vous en créer un, ce serveur est autant utile pour le programme tutorat que pour recevoir des informations générales sur l'HELMo et ses divers activités.\n\n"
         f"CADRE ET ENGAGEMENTS DU TUTORAT\n\n"
         f"1. Engagement mutuel : Le tuteur réalise cet accompagnement de manière bénévole en parallèle de sa propre formation. Veillez à respecter les horaires et engagements convenus.\n"
         f"2. Préparation des séances : Pour garantir un suivi efficace, le tutoré est invité à préparer ses questions et points de blocage en amont de chaque rencontre.\n"
         f"3. Suivi du binôme : Pour toute question ou ajustement nécessaire en cours d'année, merci de contacter votre responsable tutorat ({resp_email}).\n\n"
-    
+
         f"Autant pour le tuteur que le tutoré, nous vous invitons également à rejoindre le serveur officiel de l'HELMo Info afin de faciliter au maximum la communication générale, si vous n'avez pas de compte discord vous pouvez vous en créer un, ce serveur est autant utile pour le programme tutorat que pour recevoir des informations générales sur l'HELMo et ses divers activités."
-    
+
         f"Excellente Journée à vous,\n\n"
         f"Le {org_name}\n"
         f"Votre Responsable Tutorat : {resp_email}"
@@ -168,16 +162,6 @@ def build_mailto_link(
 # =============================================================================
 if 'assignments' not in st.session_state:
     st.session_state.assignments = {}
-
-# États de la checklist pour le suivi des groupes (Point de consigne principal)
-if 'checklist_mail_sent' not in st.session_state:
-    st.session_state.checklist_mail_sent = {}
-
-if 'checklist_completed' not in st.session_state:
-    st.session_state.checklist_completed = {}
-
-if 'custom_messages' not in st.session_state:
-    st.session_state.custom_messages = {}
 
 st.title(f"🎓 Hub d'Organisation du Tutorat - {CONFIG.get('organization_name', 'HELMo CEI')}")
 st.caption("Plateforme d'appariement, de régulation manuelle et de mise en relation B1 ↔ B2/B3")
@@ -250,9 +234,6 @@ if uploaded_file is not None:
 
     if st.sidebar.button("🔄 Réinitialiser le matching auto"):
         st.session_state.assignments = {}
-        st.session_state.checklist_mail_sent = {}
-        st.session_state.checklist_completed = {}
-        st.session_state.custom_messages = {}
         st.rerun()
 
     sections_dispo = ["Toutes"] + sorted(list(df[col_section].dropna().unique()))
@@ -293,15 +274,15 @@ if uploaded_file is not None:
     # 6. ONGLETS D'ORGANISATION
     # =========================================================================
     tab_organisation, tab_tuteurs, tab_unassigned, tab_export = st.tabs([
-        "🔀 Organisation des Binômes & Checklist",
+        "🔀 Organisation des Binômes",
         "👥 Charge & Capacité Tuteurs",
         "⚠️ Analyse des Pénuries",
         "📥 Exporter & Sauvegarder"
     ])
 
     with tab_organisation:
-        st.subheader("Ajustement, Personnalisation des mails & Checklist des Groupes")
-        st.caption("Sélectionnez le tuteur, ajoutez une ligne personnalisée aux e-mails et suivez l'état d'envoi et de clôture.")
+        st.subheader("Ajustement & Validation des Binômes")
+        st.caption("Sélectionnez ou modifiez le tuteur de chaque étudiant B1.")
 
         tuteur_options_dict = {"Aucun": "⚠️ Aucun (Non assigné)"}
         for _, t_row in df_tuteurs.iterrows():
@@ -320,7 +301,7 @@ if uploaded_file is not None:
             current_tuteur_mail = st.session_state.assignments.get(tut_id, "Aucun")
 
             with st.container():
-                c1, c2, c3, c4 = st.columns([2.2, 2.2, 1.4, 2.2])
+                c1, c2, c3, c4 = st.columns([2.5, 2.5, 1.2, 1.8])
 
                 with c1:
                     st.markdown(f"**{tut_nom}** {get_badge_html(tut_sec)}", unsafe_allow_html=True)
@@ -352,18 +333,6 @@ if uploaded_file is not None:
 
                 with c4:
                     if new_tuteur != "Aucun":
-                        # Champ de saisie pour ajouter une ligne de texte personnalisée dans le mail (Point 1)
-                        current_custom_msg = st.session_state.custom_messages.get(tut_id, "")
-                        updated_msg = st.text_input(
-                            "Ligne perso mail",
-                            value=current_custom_msg,
-                            placeholder="Ajouter une ligne au mail...",
-                            key=f"custom_msg_{tut_id}",
-                            label_visibility="collapsed"
-                        )
-                        if updated_msg != current_custom_msg:
-                            st.session_state.custom_messages[tut_id] = updated_msg
-
                         t_match = df_tuteurs[df_tuteurs[col_email] == new_tuteur]
                         if not t_match.empty:
                             t_row = t_match.iloc[0]
@@ -376,31 +345,12 @@ if uploaded_file is not None:
                                 tut_nom, t_nom,
                                 tut_sec,
                                 tut_moyen, tut_info, tut_autre,
-                                t_moyen, t_info,
-                                custom_line=st.session_state.custom_messages.get(tut_id, "")
+                                t_moyen, t_info
                             )
                             if mailto:
                                 st.link_button("📧 Envoyer Mailto", mailto)
                     else:
                         st.button("En attente", key=f"btn_warn_{tut_id}", disabled=True)
-
-                # Checklist des groupes : Mail envoyé / Terminé
-                if new_tuteur != "Aucun":
-                    chk_col1, chk_col2 = st.columns(2)
-                    with chk_col1:
-                        is_sent = st.checkbox(
-                            "📩 Mail envoyé et validé",
-                            value=st.session_state.checklist_mail_sent.get(tut_id, False),
-                            key=f"chk_sent_{tut_id}"
-                        )
-                        st.session_state.checklist_mail_sent[tut_id] = is_sent
-                    with chk_col2:
-                        is_comp = st.checkbox(
-                            "✅ Suivi du groupe terminé",
-                            value=st.session_state.checklist_completed.get(tut_id, False),
-                            key=f"chk_comp_{tut_id}"
-                        )
-                        st.session_state.checklist_completed[tut_id] = is_comp
 
                 with st.expander(f"🔍 Détails contact & besoins de {tut_nom}"):
                     dc1, dc2 = st.columns(2)
@@ -480,8 +430,8 @@ if uploaded_file is not None:
             st.success("🎉 Tous les tutorés B1 ont un tuteur assigné !")
 
     with tab_export:
-        st.subheader("Exporter l'Assemblée Générée & Checklist")
-        st.write("Téléchargez le fichier récapitulatif final incluant l'état de la checklist et les notes personnalisées au format Excel.")
+        st.subheader("Exporter l'Assemblée Générée")
+        st.write("Téléchargez le fichier récapitulatif final au format Excel pour vos archives ou le comité.")
 
         export_data = []
         for _, tutore in df_tutores.iterrows():
@@ -494,10 +444,6 @@ if uploaded_file is not None:
                 if not t_match.empty:
                     t_nom = t_match.iloc[0][col_nom]
 
-            mail_sent_status = "Oui" if st.session_state.checklist_mail_sent.get(tut_id, False) else "Non"
-            completed_status = "Oui" if st.session_state.checklist_completed.get(tut_id, False) else "Non"
-            custom_note = st.session_state.custom_messages.get(tut_id, "")
-
             export_data.append({
                 "ID Tutoré": tut_id,
                 "Nom Tutoré": tutore[col_nom],
@@ -507,10 +453,7 @@ if uploaded_file is not None:
                 "Info Contact Tutoré": clean_val(tutore[col_info] if col_info else ""),
                 "Remarques Tutoré": clean_val(tutore[col_autre] if col_autre else ""),
                 "Nom Tuteur Assigné": t_nom,
-                "Email Tuteur Assigné": t_mail,
-                "Ligne Perso Mail": custom_note,
-                "Mail Envoyé (Checklist)": mail_sent_status,
-                "Suivi Terminé (Checklist)": completed_status
+                "Email Tuteur Assigné": t_mail
             })
 
         df_export = pd.DataFrame(export_data)
